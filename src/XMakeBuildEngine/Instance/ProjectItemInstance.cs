@@ -1217,10 +1217,7 @@ namespace Microsoft.Build.Execution
             /// </summary>
             public string GetMetadataEscaped(string metadataName)
             {
-                if (metadataName == null || metadataName.Length == 0)
-                {
-                    ErrorUtilities.VerifyThrowArgumentLength(metadataName, "metadataName");
-                }
+                ErrorUtilities.VerifyThrowArgumentLength(metadataName, "metadataName");
 
                 string value = null;
                 ProjectMetadataInstance metadatum = null;

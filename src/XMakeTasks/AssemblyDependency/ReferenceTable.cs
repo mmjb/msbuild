@@ -2450,13 +2450,13 @@ namespace Microsoft.Build.Tasks
             scatterFiles = new ITaskItem[0];
             copyLocalFiles = new ITaskItem[0];
 
-            ArrayList primaryItems = new ArrayList();
-            ArrayList dependencyItems = new ArrayList();
-            ArrayList relatedItems = new ArrayList();
-            ArrayList satelliteItems = new ArrayList();
-            ArrayList serializationAssemblyItems = new ArrayList();
-            ArrayList scatterItems = new ArrayList();
-            ArrayList copyLocalItems = new ArrayList();
+            List<ITaskItem> primaryItems = new List<ITaskItem>();
+            List<ITaskItem> dependencyItems = new List<ITaskItem>();
+            List<ITaskItem> relatedItems = new List<ITaskItem>();
+            List<ITaskItem> satelliteItems = new List<ITaskItem>();
+            List<ITaskItem> serializationAssemblyItems = new List<ITaskItem>();
+            List<ITaskItem> scatterItems = new List<ITaskItem>();
+            List<ITaskItem> copyLocalItems = new List<ITaskItem>();
 
             foreach (AssemblyNameExtension assemblyName in References.Keys)
             {
@@ -2512,11 +2512,11 @@ namespace Microsoft.Build.Tasks
             primaryFiles = new ITaskItem[primaryItems.Count];
             primaryItems.CopyTo(primaryFiles, 0);
 
-            dependencyFiles = (ITaskItem[])dependencyItems.ToArray(typeof(ITaskItem));
-            relatedFiles = (ITaskItem[])relatedItems.ToArray(typeof(ITaskItem));
-            satelliteFiles = (ITaskItem[])satelliteItems.ToArray(typeof(ITaskItem));
-            serializationAssemblyFiles = (ITaskItem[])serializationAssemblyItems.ToArray(typeof(ITaskItem));
-            scatterFiles = (ITaskItem[])scatterItems.ToArray(typeof(ITaskItem));
+            dependencyFiles = dependencyItems.ToArray();
+            relatedFiles = relatedItems.ToArray();
+            satelliteFiles = satelliteItems.ToArray();
+            serializationAssemblyFiles = serializationAssemblyItems.ToArray();
+            scatterFiles = scatterItems.ToArray();
 
             // Sort for stable outputs. (These came from a hashtable, which as undefined enumeration order.)
             Array.Sort(primaryFiles, TaskItemSpecFilenameComparer.comparer);
@@ -2528,13 +2528,13 @@ namespace Microsoft.Build.Tasks
             FindCopyLocalItems(satelliteFiles, copyLocalItems);
             FindCopyLocalItems(serializationAssemblyFiles, copyLocalItems);
             FindCopyLocalItems(scatterFiles, copyLocalItems);
-            copyLocalFiles = (ITaskItem[])copyLocalItems.ToArray(typeof(ITaskItem));
+            copyLocalFiles = copyLocalItems.ToArray();
         }
 
         /// <summary>
         /// Set metadata on the items which will be output from RAR.
         /// </summary>
-        private ITaskItem SetItemMetadata(ArrayList relatedItems, ArrayList satelliteItems, ArrayList serializationAssemblyItems, ArrayList scatterItems, string fusionName, Reference reference, AssemblyNameExtension assemblyName, FileExists fileExists)
+        private ITaskItem SetItemMetadata(List<ITaskItem> relatedItems, List<ITaskItem> satelliteItems, List<ITaskItem> serializationAssemblyItems, List<ITaskItem> scatterItems, string fusionName, Reference reference, AssemblyNameExtension assemblyName, FileExists fileExists)
         {
             // Set up the main item.
             ITaskItem referenceItem = new TaskItem();
@@ -2894,7 +2894,7 @@ namespace Microsoft.Build.Tasks
         /// </summary>
         /// <param name="items"></param>
         /// <param name="copyLocalItems"></param>
-        private static void FindCopyLocalItems(ITaskItem[] items, ArrayList copyLocalItems)
+        private static void FindCopyLocalItems(ITaskItem[] items, List<ITaskItem> copyLocalItems)
         {
             foreach (ITaskItem i in items)
             {

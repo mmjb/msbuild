@@ -227,9 +227,7 @@ namespace Microsoft.Build.Tasks
                     }
 
                     var name = assemblyIdentity.Attribute("name");
-                    var nameValue = name.Value;
                     var publicKeyToken = assemblyIdentity.Attribute("publicKeyToken");
-                    var publicKeyTokenValue = publicKeyToken.Value;
                     var culture = assemblyIdentity.Attribute("culture");
                     var cultureValue = culture == null ? String.Empty : culture.Value;
 
@@ -237,6 +235,8 @@ namespace Microsoft.Build.Tasks
                     {
                         continue;
                     }
+                    var publicKeyTokenValue = publicKeyToken.Value;
+                    var nameValue = name.Value;
 
                     var oldVersionAttribute = bindingRedirect.Attribute("oldVersion");
                     var newVersionAttribute = bindingRedirect.Attribute("newVersion");
@@ -247,7 +247,7 @@ namespace Microsoft.Build.Tasks
                     }
 
                     var oldVersionRange = oldVersionAttribute.Value.Split('-');
-                    if (oldVersionRange == null || oldVersionRange.Length == 0 || oldVersionRange.Length > 2)
+                    if (oldVersionRange.Length == 0 || oldVersionRange.Length > 2)
                     {
                         continue;
                     }

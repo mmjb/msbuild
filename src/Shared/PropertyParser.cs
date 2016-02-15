@@ -3,7 +3,6 @@
 
 using System;
 using System.Text;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.Build.Framework;
@@ -27,13 +26,13 @@ namespace Microsoft.Build.Tasks
         /// <param name="propertyList"></param>
         /// <param name="propertiesTable"></param>
         /// <returns>true on success, false on failure.</returns>
-        static internal bool GetTable(TaskLoggingHelper log, string parameterName, string[] propertyList, out Hashtable propertiesTable)
+        static internal bool GetTable(TaskLoggingHelper log, string parameterName, string[] propertyList, out Dictionary<string, string> propertiesTable)
         {
             propertiesTable = null;
 
             if (propertyList != null)
             {
-                propertiesTable = new Hashtable(StringComparer.OrdinalIgnoreCase);
+                propertiesTable = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
                 // Loop through the array.  Each string in the array should be of the form:
                 //          MyPropName=MyPropValue
@@ -89,13 +88,13 @@ namespace Microsoft.Build.Tasks
         /// <param name="propertyList"></param>
         /// <param name="propertiesTable"></param>
         /// <returns>true on success, false on failure.</returns>
-        static internal bool GetTableWithEscaping(TaskLoggingHelper log, string parameterName, string syntaxName, string[] propertyNameValueStrings, out Hashtable finalPropertiesTable)
+        static internal bool GetTableWithEscaping(TaskLoggingHelper log, string parameterName, string syntaxName, string[] propertyNameValueStrings, out Dictionary<string, string> finalPropertiesTable)
         {
             finalPropertiesTable = null;
 
             if (propertyNameValueStrings != null)
             {
-                finalPropertiesTable = new Hashtable(StringComparer.OrdinalIgnoreCase);
+                finalPropertiesTable = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 List<PropertyNameValuePair> finalPropertiesList = new List<PropertyNameValuePair>();
 
                 // Loop through the array.  Each string in the array should be of the form:

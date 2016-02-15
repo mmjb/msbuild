@@ -6,7 +6,7 @@ using System.IO;
 using System.Xml;
 using System.Resources;
 using System.Reflection;
-using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -37,7 +37,7 @@ namespace Microsoft.Build.Tasks
         private string[] _targets = null;
 
         // outputs of all built targets
-        private ArrayList _targetOutputs = new ArrayList();
+        private List<ITaskItem> _targetOutputs = new List<ITaskItem>();
 
         // When this is true, instead of calling the engine once to build all the targets,
         // we would call the engine once per target.  The benefit of this is that
@@ -74,7 +74,7 @@ namespace Microsoft.Build.Tasks
         {
             get
             {
-                return (ITaskItem[])_targetOutputs.ToArray(typeof(ITaskItem));
+                return _targetOutputs.ToArray();
             }
         }
 
@@ -133,7 +133,7 @@ namespace Microsoft.Build.Tasks
             // string[] represents a set of target names to build.  Depending on the value 
             // of the RunEachTargetSeparately parameter, we each just call the engine to run all 
             // the targets together, or we call the engine separately for each target.
-            ArrayList targetLists = Microsoft.Build.Tasks.MSBuild.CreateTargetLists(this.Targets, this.RunEachTargetSeparately);
+            List<string[]> targetLists = Microsoft.Build.Tasks.MSBuild.CreateTargetLists(this.Targets, this.RunEachTargetSeparately);
 
             ITaskItem[] singleProject = new ITaskItem[1];
             singleProject[0] = null;

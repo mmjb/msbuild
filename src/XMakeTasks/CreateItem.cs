@@ -8,6 +8,7 @@ using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.Build.Shared;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Resources;
@@ -121,7 +122,7 @@ namespace Microsoft.Build.Tasks
             }
 
             // Parse the global properties into a hashtable.
-            Hashtable metadataTable;
+            Dictionary<string, string> metadataTable;
             if (!PropertyParser.GetTable(Log, "AdditionalMetadata", this.AdditionalMetadata, out metadataTable))
             {
                 return false;
@@ -144,7 +145,7 @@ namespace Microsoft.Build.Tasks
         /// </summary>
         /// <param name="needToSetAttributes">Whether attributes need to be set.</param>
         /// <param name="excludeItems">Items to exclude.</param>
-        private ArrayList CreateOutputItems(Hashtable metadataTable, Hashtable excludeItems)
+        private ArrayList CreateOutputItems(Dictionary<string, string> metadataTable, Hashtable excludeItems)
         {
             ArrayList outputItems = new ArrayList();
 
@@ -158,20 +159,20 @@ namespace Microsoft.Build.Tasks
                     ITaskItem newItem = _include[i];
                     if (null != metadataTable)
                     {
-                        foreach (DictionaryEntry nameAndValue in metadataTable)
+                        foreach (KeyValuePair<string, string> nameAndValue in metadataTable)
                         {
                             // 1. If we have been asked to not preserve existing metadata then overwrite
                             // 2. If there is no existing metadata then apply the new
-                            if ((!_preserveExistingMetadata) || String.IsNullOrEmpty(newItem.GetMetadata((string)nameAndValue.Key)))
+                            if ((!_preserveExistingMetadata) || String.IsNullOrEmpty(newItem.GetMetadata(nameAndValue.Key)))
                             {
-                                if (FileUtilities.ItemSpecModifiers.IsItemSpecModifier((string)nameAndValue.Key))
+                                if (FileUtilities.ItemSpecModifiers.IsItemSpecModifier(nameAndValue.Key))
                                 {
                                     // Explicitly setting built-in metadata, is not allowed. 
-                                    Log.LogErrorWithCodeFromResources("CreateItem.AdditionalMetadataError", (string)nameAndValue.Key);
+                                    Log.LogErrorWithCodeFromResources("CreateItem.AdditionalMetadataError", nameAndValue.Key);
                                     break;
                                 }
 
-                                newItem.SetMetadata((string)nameAndValue.Key, (string)nameAndValue.Value);
+                                newItem.SetMetadata(nameAndValue.Key, nameAndValue.Value);
                             }
                         }
                     }
@@ -200,16 +201,17 @@ namespace Microsoft.Build.Tasks
                     if (FileMatcher.HasWildcards(i.ItemSpec))
                     {
                         string[] files = FileMatcher.GetFiles(null /* use current directory */, i.ItemSpec);
+
                         foreach (string file in files)
                         {
-                            TaskItem newItem = new TaskItem((ITaskItem)i);
+                            TaskItem newItem = new TaskItem(i);
                             newItem.ItemSpec = file;
 
                             // Compute the RecursiveDir portion.
                             FileMatcher.Result match = FileMatcher.FileMatch(i.ItemSpec, file);
                             if (match.isLegalFileSpec && match.isMatch)
                             {
-                                if (match.wildcardDirectoryPart != null && match.wildcardDirectoryPart.Length > 0)
+                                if (!string.IsNullOrEmpty(match.wildcardDirectoryPart))
                                 {
                                     newItem.SetMetadata(FileUtilities.ItemSpecModifiers.RecursiveDir, match.wildcardDirectoryPart);
                                 }

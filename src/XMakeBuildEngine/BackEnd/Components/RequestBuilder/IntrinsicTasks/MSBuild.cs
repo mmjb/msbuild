@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -65,7 +64,7 @@ namespace Microsoft.Build.BackEnd
         private string _undefineProperties = null;
 
         // outputs of all built targets
-        private ArrayList _targetOutputs = new ArrayList();
+        private List<ITaskItem> _targetOutputs = new List<ITaskItem>();
         // indicates if the paths of target output items should be rebased relative to the calling project
         private bool _rebaseOutputs = false;
         // Indicates that we should stop building remaining projects as soon as one fails to build.
@@ -224,7 +223,7 @@ namespace Microsoft.Build.BackEnd
         {
             get
             {
-                return (ITaskItem[])_targetOutputs.ToArray(typeof(ITaskItem));
+                return _targetOutputs.ToArray();
             }
         }
 
@@ -440,7 +439,7 @@ namespace Microsoft.Build.BackEnd
             }
 
             // Parse the global properties into a hashtable.
-            Hashtable propertiesTable;
+            Dictionary<string, string> propertiesTable;
             if (!PropertyParser.GetTableWithEscaping(Log, ResourceUtilities.FormatResourceString("General.GlobalProperties"), "Properties", this.Properties, out propertiesTable))
             {
                 return false;
@@ -482,7 +481,7 @@ namespace Microsoft.Build.BackEnd
             // string[] represents a set of target names to build.  Depending on the value 
             // of the RunEachTargetSeparately parameter, we each just call the engine to run all 
             // the targets together, or we call the engine separately for each target.
-            ArrayList targetLists = CreateTargetLists(this.Targets, this.RunEachTargetSeparately);
+            List<string[]> targetLists = CreateTargetLists(this.Targets, this.RunEachTargetSeparately);
 
 
             bool success = true;
@@ -589,7 +588,7 @@ namespace Microsoft.Build.BackEnd
         /// <summary>
         /// Build projects which have not been skipped. This will be done in parallel
         /// </summary>
-        private async Task<bool> BuildProjectsInParallel(Hashtable propertiesTable, string[] undefinePropertiesArray, ArrayList targetLists, bool success, bool[] skipProjects)
+        private async Task<bool> BuildProjectsInParallel(Dictionary<string, string> propertiesTable, string[] undefinePropertiesArray, List<string[]> targetLists, bool success, bool[] skipProjects)
         {
             ITaskItem[] projectToBuildInParallel = Projects;
             // There were some projects that were skipped so we need to recreate the
@@ -679,7 +678,7 @@ namespace Microsoft.Build.BackEnd
         /// <param name="targets"></param>
         /// <param name="runEachTargetSeparately"></param>
         /// <returns></returns>
-        internal static ArrayList CreateTargetLists
+        internal static List<string[]> CreateTargetLists
             (
             string[] targets,
             bool runEachTargetSeparately
@@ -689,7 +688,7 @@ namespace Microsoft.Build.BackEnd
             // string[] represents a set of target names to build.  Depending on the value 
             // of the RunEachTargetSeparately parameter, we each just call the engine to run all 
             // the targets together, or we call the engine separately for each target.
-            ArrayList targetLists = new ArrayList();
+            List<string[]> targetLists = new List<string[]>();
             if ((runEachTargetSeparately) && (targets != null) && (targets.Length > 0))
             {
                 // Separate target invocations for each individual target.
@@ -715,14 +714,14 @@ namespace Microsoft.Build.BackEnd
         internal static async Task<bool> ExecuteTargets
             (
             ITaskItem[] projects,
-            Hashtable propertiesTable,
+            Dictionary<string, string> propertiesTable,
             string[] undefineProperties,
-            ArrayList targetLists,
+            List<string[]> targetLists,
             bool stopOnFirstFailure,
             bool rebaseOutputs,
             IBuildEngine3 buildEngine,
             TaskLoggingHelper log,
-            ArrayList targetOutputs,
+            List<ITaskItem> targetOutputs,
             bool useResultsCache,
             bool unloadProjectsOnCompletion,
             string toolsVersion
@@ -737,7 +736,7 @@ namespace Microsoft.Build.BackEnd
             string[] projectNames = new string[projects.Length];
             string[] toolsVersions = new string[projects.Length];
             IList<IDictionary<string, ITaskItem[]>> targetOutputsPerProject = null;
-            IDictionary[] projectProperties = new IDictionary[projects.Length];
+            Dictionary<string, string>[] projectProperties = new Dictionary<string, string>[projects.Length];
             List<string>[] undefinePropertiesPerProject = new List<string>[projects.Length];
 
             for (int i = 0; i < projectNames.Length; i++)
@@ -758,7 +757,7 @@ namespace Microsoft.Build.BackEnd
                     // parse the string containing the properties
                     if (!String.IsNullOrEmpty(projects[i].GetMetadata("Properties")))
                     {
-                        Hashtable preProjectPropertiesTable;
+                        Dictionary<string, string> preProjectPropertiesTable;
                         if (!PropertyParser.GetTableWithEscaping
                              (log, ResourceUtilities.FormatResourceString("General.OverridingProperties", projectNames[i]), "Properties", projects[i].GetMetadata("Properties").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
                               out preProjectPropertiesTable)
@@ -801,7 +800,7 @@ namespace Microsoft.Build.BackEnd
                     // parse the string containing the properties
                     if (!String.IsNullOrEmpty(projects[i].GetMetadata("AdditionalProperties")))
                     {
-                        Hashtable additionalProjectPropertiesTable;
+                        Dictionary<string, string> additionalProjectPropertiesTable;
                         if (!PropertyParser.GetTableWithEscaping
                              (log, ResourceUtilities.FormatResourceString("General.AdditionalProperties", projectNames[i]), "AdditionalProperties", projects[i].GetMetadata("AdditionalProperties").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
                               out additionalProjectPropertiesTable)
@@ -810,20 +809,20 @@ namespace Microsoft.Build.BackEnd
                             return false;
                         }
 
-                        Hashtable combinedTable = new Hashtable(StringComparer.OrdinalIgnoreCase);
+                        Dictionary<string, string> combinedTable = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                         // First copy in the properties from the global table that not in the additional properties table
                         if (projectProperties[i] != null)
                         {
-                            foreach (DictionaryEntry entry in projectProperties[i])
+                            foreach (KeyValuePair<string, string> entry in projectProperties[i])
                             {
-                                if (!additionalProjectPropertiesTable.Contains(entry.Key))
+                                if (!additionalProjectPropertiesTable.ContainsKey(entry.Key))
                                 {
                                     combinedTable.Add(entry.Key, entry.Value);
                                 }
                             }
                         }
                         // Add all the additional properties
-                        foreach (DictionaryEntry entry in additionalProjectPropertiesTable)
+                        foreach (KeyValuePair<string, string> entry in additionalProjectPropertiesTable)
                         {
                             combinedTable.Add(entry.Key, entry.Value);
                         }
@@ -867,7 +866,7 @@ namespace Microsoft.Build.BackEnd
                 {
                     for (int i = 0; i < projects.Length; i++)
                     {
-                        IEnumerable nonNullTargetList = (targetList != null) ? targetList : targetOutputsPerProject[i].Keys;
+                        IEnumerable<string> nonNullTargetList = (targetList != null) ? targetList : targetOutputsPerProject[i].Keys;
 
                         foreach (string targetName in nonNullTargetList)
                         {
